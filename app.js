@@ -16,8 +16,8 @@ const cors = require("cors");
 const config = require('./config');
 require("dotenv").config();
 
-const client_id = config.client_id; // Your client id
-const client_secret = config.client_secret; // Your secret
+const client_id = process.env.clientID; // Your client id
+const client_secret = process.env.clientSecret; // Your secret
 const redirect_uri = process.env.redirect_uri || "http://localhost:3000/callback"; // Your redirect uri
 
 var generateRandomString = function (length) {
