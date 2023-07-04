@@ -23,7 +23,7 @@ require("dotenv").config();
 
 const client_id = process.env.clientID; // Your client id
 const client_secret = process.env.clientSecret; // Your secret
-const privateKey = fs.readFileSync("AuthKey_A8FKGGUQP3.p8").toString();
+// const privateKey = fs.readFileSync("AuthKey_A8FKGGUQP3.p8").toString();
 const teamId = process.env.teamId;
 const keyId = process.env.keyId;
 
