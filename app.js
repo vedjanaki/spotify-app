@@ -8,32 +8,18 @@
  */
 const express = require("express"); // Express web server framework
 const request = require("request");
-// const axios = require("axios"); // "Request" library
-// const bodyParser = require("body-parser");
-// const cors = require("cors");
 const querystring = require("querystring");
 const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
-// const https = require("https");
-// const exphbs = require("express-handlebars");
 const cors = require("cors");
-// const { config } = require("./config");
+const config = require('./config');
 require("dotenv").config();
 
-const client_id = process.env.clientID; // Your client id
-const client_secret = process.env.clientSecret; // Your secret
-// const privateKey = fs.readFileSync("AuthKey_A8FKGGUQP3.p8").toString();
-const teamId = process.env.teamId;
-const keyId = process.env.keyId;
+const client_id = config.client_id; // Your client id
+const client_secret = config.client_secret; // Your secret
+const redirect_uri = process.env.redirect_uri || "http://localhost:3000/callback"; // Your redirect uri
 
-var redirect_uri = process.env.redirect_uri || "http://localhost:3000/callback"; // Your redirect uri
-// var redirect_uri = "http://localhost:3000/callback";
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated stringh
- */
 var generateRandomString = function (length) {
   var text = "";
   var possible =
@@ -48,9 +34,7 @@ var generateRandomString = function (length) {
 var stateKey = "spotify_auth_state";
 
 var app = express();
-// app.engine("handlebars", exphbs({ defaultLayout: null }));
-// app.set("view engine", "handlebars");
-// app.set("views", __dirname + "/views");
+
 app
   .use(express.static(__dirname + "/public"))
   .use(cors())
@@ -60,7 +44,6 @@ app.get("/login", function (req, res) {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
-  // your application requests authorization
   var scope = "user-read-private user-read-email user-top-read";
   res.redirect(
     "https://accounts.spotify.com/authorize?" +
@@ -74,45 +57,7 @@ app.get("/login", function (req, res) {
   );
 });
 
-app.get("/applemusic", function (req, res) {
-  const token = jwt.sign({}, privateKey, {
-    algorithm: "ES256",
-    expiresIn: "180d",
-    issuer: teamId,
-    header: {
-      alg: "ES256",
-      kid: keyId,
-    },
-  });
-
-  res.redirect(
-    "/#" +
-      querystring.stringify({
-        client: "applemusic",
-        dev_token: token,
-      })
-  );
-  // res.redirect("https://idmsa.apple.com/IDMSWebAuth/auth?" + querystring.stringify({}))
-  // let music = MusicKit.getInstance();
-  // music.authorize().then(console.log("hello"));
-  // res.sendFile(__dirname + "/public/applemusic.html");
-});
-
-app.get("/lastfm", function (req, res) {
-  // res.redirect(
-  //   "/#" +
-  //     querystring.stringify({
-  //       lastfmKey: lastfmKey,
-  //       service: "lastfm"
-  //     })
-  // );
-  res.sendFile(__dirname + "/public/lastfm.html");
-});
-
 app.get("/callback", function (req, res) {
-  // your application requests refresh and access tokens
-  // after checking the state parameter
-
   var code = req.query.code || null;
   var state = req.query.state || null;
   var storedState = req.cookies ? req.cookies[stateKey] : null;
@@ -136,14 +81,13 @@ app.get("/callback", function (req, res) {
       headers: {
         Authorization:
           "Basic " +
-          new Buffer(client_id + ":" + client_secret).toString("base64"),
+          Buffer.from(client_id + ":" + client_secret).toString("base64"),
       },
       json: true,
     };
 
     request.post(authOptions, function (error, response, body) {
       if (!error && response.statusCode === 200) {
-        access_token = body.access_token;
         var access_token = body.access_token,
           refresh_token = body.refresh_token;
 
@@ -155,13 +99,6 @@ app.get("/callback", function (req, res) {
               refresh_token: refresh_token,
             })
         );
-        // res.redirect("/spotify");
-        // console.log(retrieveTracksSpotify(access_token, "short_term", 1, "LAST MONTH"));
-        // res.render("spotify", {
-        //   shortTerm: retrieveTracksSpotify(access_token, "short_term", 1, "LAST MONTH"),
-        //   mediumTerm: retrieveTracksSpotify(access_token, "medium_term", 2, "LAST 6 MONTHS"),
-        //   longTerm: retrieveTracksSpotify(access_token, "long_term", 3, "ALL TIME")
-        // });
       } else {
         res.send("There was an error during authentication.");
       }
@@ -170,14 +107,13 @@ app.get("/callback", function (req, res) {
 });
 
 app.get("/refresh_token", function (req, res) {
-  // requesting access token from refresh token
   var refresh_token = req.query.refresh_token;
   var authOptions = {
     url: "https://accounts.spotify.com/api/token",
     headers: {
       Authorization:
         "Basic " +
-        new Buffer(client_id + ":" + client_secret).toString("base64"),
+        Buffer.from(client_id + ":" + client_secret).toString("base64"),
     },
     form: {
       grant_type: "refresh_token",
